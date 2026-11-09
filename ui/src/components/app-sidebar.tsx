@@ -20,7 +20,7 @@ export function AppSidebar({ page, data }: { page: string; data: Dashboard | nul
             <SidebarMenuButton size="lg" asChild className="hover:bg-transparent">
               <a href={href("overview")} onClick={() => setOpenMobile(false)}>
                 <div className="flex size-8 items-center justify-center"><Logo /></div>
-                <div className="grid leading-tight">
+                <div className="grid leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="text-[15px] font-semibold tracking-tight">devsync</span>
                   <span className="font-mono text-xs text-muted-foreground">{data?.me ?? "…"}</span>
                 </div>
@@ -63,14 +63,14 @@ export function AppSidebar({ page, data }: { page: string; data: Dashboard | nul
                 {!m.me && m.url ? (
                   <a href={m.url} target="_blank" rel="noreferrer">
                     <Dot status={m.reach === "bad" ? "bad" : m.reach === "none" ? "none" : "ok"} className="mx-1" />
-                    <span className="font-mono">{m.name}</span>
-                    <ExternalLink className="ml-auto opacity-60" />
+                    <span className="font-mono group-data-[collapsible=icon]:hidden">{m.name}</span>
+                    <ExternalLink className="ml-auto opacity-60 group-data-[collapsible=icon]:hidden" />
                   </a>
                 ) : (
                   <>
                     <Dot status="ok" className="mx-1" />
-                    <span className="font-mono">{m.name}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">this machine</span>
+                    <span className="font-mono group-data-[collapsible=icon]:hidden">{m.name}</span>
+                    <span className="ml-auto text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">this machine</span>
                   </>
                 )}
               </SidebarMenuButton>
