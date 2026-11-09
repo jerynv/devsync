@@ -10,6 +10,10 @@ export interface RepoCell {
   issues: Issue[];
   branch?: string;
   upstream?: string;
+  head?: string;
+  ahead?: number;
+  behind?: number;
+  dirty?: number;
   last_fetch?: number | null;
   error?: string;
 }
@@ -30,6 +34,17 @@ export interface FolderCell {
   type?: string;
   error?: string;
   conflicts?: string[];
+  paused?: boolean;
+  need?: number;
+  need_bytes?: number;
+  local_files?: number | null;
+  global_files?: number | null;
+  local_bytes?: number | null;
+  global_bytes?: number | null;
+  state_changed?: string;
+  devices?: string[];
+  remote?: { name: string; completion: number; need_items: number; need_bytes: number }[];
+  error_paths?: string[];
 }
 
 export interface Folder {
@@ -53,6 +68,7 @@ export interface Cycle {
 export interface Machine {
   name: string;
   me: boolean;
+  generated?: number | null;
   reach: "ok" | "bad" | "none";
   seen: number | null;
   error: string;
@@ -60,7 +76,7 @@ export interface Machine {
   version: string;
   url: string;
   cycle: Cycle;
-  syncthing: { reachable: boolean; error: string; connected: { name: string; connected: boolean }[] };
+  syncthing: { reachable: boolean; error: string; connected: { name: string; connected: boolean; last_seen?: string }[] };
 }
 
 export interface AttentionGroup { machine: string; subject: string; messages: string[] }
@@ -83,6 +99,27 @@ export interface Skills {
 }
 
 export interface Activity { machine: string; finished: number | null; dry_run: boolean; actions: string[] }
+export interface HistoryEntry {
+  machine: string;
+  started: number | null;
+  finished: number | null;
+  actions: string[];
+  action_count: number;
+  attention_count: number;
+  error: string;
+}
+
+export type DriftArea = "repos" | "folders" | "skills" | "machines";
+export interface Drift {
+  id: string;
+  area: DriftArea;
+  kind: string;
+  tone: Tone;
+  subject: string;
+  summary: string;
+  machines: Record<string, string>;
+}
+
 export interface Housekeeping { machine: string; unlisted: string[]; naming: string[]; config_conflicts: string[] }
 
 export interface Dashboard {
@@ -97,5 +134,7 @@ export interface Dashboard {
   folders: Folder[];
   skills: Skills[];
   activity: Activity[];
+  history?: HistoryEntry[];
   housekeeping: Housekeeping[];
+  drift?: Drift[];
 }

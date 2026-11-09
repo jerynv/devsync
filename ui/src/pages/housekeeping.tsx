@@ -1,7 +1,6 @@
 import * as React from "react";
-import { Boxes } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Empty, Panel } from "@/components/panel";
+import { Empty } from "@/components/panel";
 import { SearchBox } from "@/components/table-tools";
 import type { PageProps } from "@/routes";
 
@@ -28,19 +27,20 @@ export function HousekeepingPage({ data }: PageProps) {
         <SearchBox value={q} onChange={setQ} placeholder="Filter paths" />
       </div>
       {KINDS.map((k) => (
-        <TabsContent key={k.key} value={k.key} className="space-y-3">
-          <p className="text-sm text-muted-foreground">{k.hint}</p>
-          <div className="grid gap-3 lg:grid-cols-2">
+        <TabsContent key={k.key} value={k.key}>
+          <p className="mb-3 text-sm text-muted-foreground">{k.hint}</p>
+          <div className="grid gap-x-10 lg:grid-cols-2">
             {data.housekeeping.map((h) => {
               const list = h[k.key].filter((p) => p.toLowerCase().includes(n));
               return (
-                <Panel key={h.machine} icon={Boxes} title={<span className="font-mono">{h.machine}</span>} action={`${list.length}`}>
+                <section key={h.machine} className="min-w-0">
+                  <div className="flex h-9 items-center border-b text-sm"><span className="font-mono font-medium">{h.machine}</span><span className="ml-auto text-xs text-muted-foreground">{list.length}</span></div>
                   {list.length ? (
-                    <ul className="max-h-[480px] space-y-0.5 overflow-y-auto">
-                      {list.map((p) => <li key={p} className="truncate rounded px-1.5 py-1 font-mono text-xs hover:bg-muted" title={p}>{p}</li>)}
+                    <ul className="max-h-[520px] divide-y overflow-y-auto">
+                      {list.map((p) => <li key={p} className="truncate py-1.5 font-mono text-xs" title={p}>{p}</li>)}
                     </ul>
                   ) : <Empty>{h[k.key].length ? "Nothing matches." : "Nothing here."}</Empty>}
-                </Panel>
+                </section>
               );
             })}
           </div>

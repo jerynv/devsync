@@ -34,8 +34,9 @@ examples, screenshots or logs. Use `example.com` / `example.invalid` and generic
 ## Layout
 
 - `devsync/`: the Python package (standard library only, Python 3.11+). `model.py` turns every
-  machine's snapshot into the JSON the page shows, and all judgement about what's healthy lives
-  there, in tested Python.
+  machine's snapshot into the JSON the page shows, and all judgement about what's healthy, and
+  where machines disagree (`drift()`), lives there, in tested Python. New fields from a newer
+  machine may be missing from an older one; treat unknown as "no claim", never as a difference.
 - `ui/`: the page, built with React, Tailwind and [shadcn/ui](https://ui.shadcn.com). It
   compiles into `devsync/web/`, which is committed, so running devsync never needs Node.
 - `contrib/`: service templates. `examples/`: sample config.

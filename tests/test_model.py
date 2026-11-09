@@ -135,3 +135,13 @@ class HistoryTest(unittest.TestCase):
             r._remember({"finished": i})
         self.assertEqual(len(r.history), cycle.HISTORY)
         self.assertEqual(r.history[0]["finished"], cycle.HISTORY + 4)
+
+
+class FirstContactTest(unittest.TestCase):
+    def test_unpolled_peer_is_quiet_until_it_fails(self):
+        from types import SimpleNamespace as NS
+        cfg = NS(machine="a", interval_s=900, repos=[])
+        st = {"a": {"version": "1"}}
+        self.assertEqual([(d["tone"], d["summary"]) for d in model.drift(cfg, ["a", "b"], st, {})],
+                         [("info", "waiting for first contact")])
+        self.assertEqual(model.drift(cfg, ["a", "b"], st, {"b": {"error": "refused"}})[0]["tone"], "warn")

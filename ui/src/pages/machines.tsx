@@ -1,54 +1,43 @@
-import { ExternalLink, Monitor } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Panel } from "@/components/panel";
+import { ExternalLink } from "lucide-react";
+import { Section } from "@/components/panel";
+import { Compare } from "@/components/compare";
 import { Dot, Pill, Quiet } from "@/components/status";
-import { age, exact, until } from "@/lib/format";
+import { DriftList } from "@/pages/drift";
+import { age, exact, isoAge, until } from "@/lib/format";
 import type { PageProps } from "@/routes";
 
-function Row({ k, children }: { k: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-1.5 text-sm">
-      <span className="text-muted-foreground">{k}</span>
-      <span className="min-w-0 truncate text-right">{children}</span>
-    </div>
-  );
-}
-
 export function MachinesPage({ data }: PageProps) {
+  const names = data.machines.map((m) => m.name);
+  const by = Object.fromEntries(data.machines.map((m) => [m.name, m]));
+  const of = (f: (m: (typeof data.machines)[number]) => React.ReactNode) => Object.fromEntries(names.map((n) => [n, f(by[n])]));
+  const drift = (data.drift ?? []).filter((d) => d.area === "machines");
+  const peers = Array.from(new Set(data.machines.flatMap((m) => m.syncthing.connected.map((c) => c.name))));
+
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-      {data.machines.map((m) => {
-        const c = m.cycle;
-        return (
-          <Panel key={m.name} icon={Monitor}
-            title={<span className="flex items-center gap-2"><span className="font-mono">{m.name}</span>{m.me && <span className="text-xs font-normal text-muted-foreground">this machine</span>}</span>}
-            action={!m.me && m.url ? <Button asChild variant="ghost" size="xs"><a href={m.url} target="_blank" rel="noreferrer">Open<ExternalLink /></a></Button> : undefined}>
-            <div className="divide-y">
-              <Row k="devsync">
-                {m.me ? <Quiet>running{m.version ? ` · v${m.version}` : ""}</Quiet>
-                  : m.reach === "bad" ? <Pill tone="bad">unreachable</Pill>
-                  : m.reach === "none" ? <Quiet status="none">not polled yet</Quiet>
-                  : <Quiet>seen {age(m.seen)}{m.version ? ` · v${m.version}` : ""}</Quiet>}
-              </Row>
-              {m.error && <p className="py-1.5 text-xs break-words text-bad">{m.error}</p>}
-              {m.has_state && <>
-                <Row k="Sync cycle">{!c.enabled ? <Quiet status="none">off</Quiet> : c.running ? <Quiet status="info">running</Quiet> : <Quiet>every {Math.round(data.interval_s / 60)} min</Quiet>}</Row>
-                <Row k="Last finished"><span title={exact(c.finished)}>{age(c.finished)}</span></Row>
-                {c.enabled && !c.running && c.next_due && <Row k="Next">{until(c.next_due)}</Row>}
-                {c.error && <p className="py-1.5 text-xs break-words text-bad">{c.error}</p>}
-                <Row k="Syncthing">
-                  {m.syncthing.reachable ? <Quiet>reachable</Quiet> : <Pill tone="bad">{m.syncthing.error || "unreachable"}</Pill>}
-                </Row>
-                {m.syncthing.connected.map((p) => (
-                  <Row key={p.name} k={`→ ${p.name}`}>
-                    <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Dot status={p.connected ? "ok" : "warn"} />{p.connected ? "connected" : "disconnected"}</span>
-                  </Row>
-                ))}
-              </>}
-            </div>
-          </Panel>
-        );
-      })}
+    <div className="space-y-8">
+      {drift.length > 0 && <Section title="Discrepancies"><DriftList items={drift} data={data} compact /></Section>}
+      <Section title="Side by side">
+        <Compare machines={names} rows={[
+          { label: "devsync", values: of((m) => m.me ? <Quiet>this machine</Quiet> : m.reach === "bad" ? <Pill tone="bad">unreachable</Pill>
+              : m.reach === "none" ? <Quiet status="none">not polled yet</Quiet> : <Quiet>seen {age(m.seen)}</Quiet>) },
+          { label: "Open", values: of((m) => !m.me && m.url ? <a href={m.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline">{m.url.replace(/^https?:\/\//, "")}<ExternalLink className="size-3" /></a> : null) },
+          { label: "Version", values: of((m) => m.version ? <span className="font-mono text-xs">{m.version}</span> : null), keys: of((m) => m.version) as Record<string, string> },
+          { label: "Data from", values: of((m) => m.has_state ? <span title={exact(m.generated)}>{age(m.generated)}</span> : null) },
+          { label: "Sync cycle", values: of((m) => !m.has_state ? null : !m.cycle.enabled ? <Quiet status="none">off</Quiet> : m.cycle.running ? <Quiet status="info">running</Quiet> : <Quiet>on</Quiet>) },
+          { label: "Last sync", values: of((m) => m.has_state ? <span title={exact(m.cycle.finished)}>{age(m.cycle.finished)}</span> : null) },
+          { label: "Next sync", values: of((m) => m.has_state && m.cycle.enabled && !m.cycle.running ? until(m.cycle.next_due) : null) },
+          { label: "Cycle error", values: of((m) => m.cycle.error ? <span className="text-xs text-bad">{m.cycle.error}</span> : null) },
+          { label: "Syncthing", values: of((m) => !m.has_state ? null : m.syncthing.reachable ? <Quiet>reachable</Quiet> : <Pill tone="bad">{m.syncthing.error || "unreachable"}</Pill>) },
+          ...peers.map((p) => ({
+            label: `→ ${p}`,
+            values: of((m) => {
+              const c = m.syncthing.connected.find((x) => x.name === p);
+              if (!c) return null;
+              return <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Dot status={c.connected ? "ok" : "warn"} />{c.connected ? "connected" : `last seen ${isoAge(c.last_seen)}`}</span>;
+            }),
+          })),
+        ]} />
+      </Section>
     </div>
   );
 }

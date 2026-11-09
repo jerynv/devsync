@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Activity, Boxes, FolderSync, GitBranch, LayoutDashboard, Monitor, Sparkles } from "lucide-react";
+import { Activity, Boxes, FolderSync, GitBranch, GitCompare, LayoutDashboard, Monitor, Sparkles } from "lucide-react";
 import type { Dashboard } from "@/lib/types";
 import { OverviewPage, attentionCount } from "@/pages/overview";
 import { ReposPage } from "@/pages/repos";
@@ -8,6 +8,7 @@ import { SkillsPage } from "@/pages/skills";
 import { MachinesPage } from "@/pages/machines";
 import { ActivityPage } from "@/pages/activity";
 import { HousekeepingPage } from "@/pages/housekeeping";
+import { DriftPage } from "@/pages/drift";
 
 export interface PageProps { data: Dashboard; params: URLSearchParams }
 
@@ -28,6 +29,9 @@ const problems = (rows: { status: string }[]) => rows.filter((r) => r.status ===
 export const ROUTES: Route[] = [
   { id: "overview", title: "Overview", icon: LayoutDashboard, group: "Workspace", component: OverviewPage,
     description: "What needs you, across every machine.", badge: attentionCount },
+  { id: "drift", title: "Discrepancies", icon: GitCompare, group: "Workspace", component: DriftPage,
+    description: "Where the machines disagree: commits, branches, folders, skills and devsync itself.",
+    badge: (d) => (d.drift ?? []).length },
   { id: "repos", title: "Repositories", icon: GitBranch, group: "Workspace", component: ReposPage,
     description: "Every repo in repos.toml, on every machine that keeps it.", badge: (d) => problems(d.repos) },
   { id: "folders", title: "Synced folders", icon: FolderSync, group: "Workspace", component: FoldersPage,
@@ -39,7 +43,7 @@ export const ROUTES: Route[] = [
     description: "Each machine's devsync, its sync cycle and Syncthing link.",
     badge: (d) => d.machines.filter((m) => m.reach === "bad").length },
   { id: "activity", title: "Activity", icon: Activity, group: "System", component: ActivityPage,
-    description: "What the last sync on each machine did." },
+    description: "Every sync on every machine, newest first: what it changed and what failed." },
   { id: "housekeeping", title: "Housekeeping", icon: Boxes, group: "System", component: HousekeepingPage,
     description: "Repos not in the manifest, folder names off the naming rule, config conflict copies.",
     badge: (d) => d.housekeeping.reduce((n, h) => n + h.config_conflicts.length, 0) },

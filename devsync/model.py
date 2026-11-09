@@ -236,7 +236,10 @@ def drift(cfg: Config, names: list[str], states: dict, peers: dict, now: float |
             continue
         p = peers.get(m) or {}
         if not states.get(m):
-            add("machines", "no-data", "warn", m, p.get("error") or "no data from this machine yet")
+            if p.get("error"):
+                add("machines", "no-data", "warn", m, p["error"])
+            else:
+                add("machines", "no-data", "info", m, "waiting for first contact")
         elif p.get("error"):
             add("machines", "unreachable", "warn", m,
                 f"unreachable now; showing what it reported {_ago(p.get('fetched'), now)}", {m: p["error"]})
@@ -324,6 +327,9 @@ def drift(cfg: Config, names: list[str], states: dict, peers: dict, now: float |
             add("skills", "differ", "warn", "skills folder",
                 f"{len(set().union(*(union - s for s in sets.values())))} skill(s) not on every machine", per)
 
+    order = {m: i for i, m in enumerate(names)}
+    for d in out:  # machines always listed in config order
+        d["machines"] = dict(sorted(d["machines"].items(), key=lambda kv: order.get(kv[0], len(order))))
     rank = {"bad": 0, "warn": 1, "info": 2, "ok": 3}
     return sorted(out, key=lambda d: (rank.get(d["tone"], 9), d["area"], d["subject"]))
 
