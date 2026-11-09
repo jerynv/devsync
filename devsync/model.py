@@ -57,7 +57,8 @@ def repo_cell(st: dict | None, kept: bool) -> dict:
         return {"status": "absent", "label": "not kept here", "issues": []}
     if st is None:
         return {"status": "none", "label": "no data", "issues": []}
-    base = {"branch": st.get("branch") or "", "upstream": st.get("upstream") or "",
+    base = {"branch": st.get("branch") or "", "upstream": st.get("upstream") or "", "head": st.get("head") or "",
+            "ahead": st.get("ahead") or 0, "behind": st.get("behind") or 0, "dirty": st.get("dirty") or 0,
             "last_fetch": st.get("last_fetch"), "error": st.get("error") or st.get("fetch_error") or ""}
     if st.get("error"):
         return {**base, "status": "bad", "label": "error", "issues": [issue("error", "bad", "error")]}
@@ -88,6 +89,9 @@ def folder_issues(f: dict) -> list[dict]:
         out.append(issue(f"{len(f['conflicts'])} conflicts", "bad", "conflicts"))
     if f.get("need"):
         out.append(issue(f"{f['need']} to sync", "info", "pending"))
+    behind = [r for r in f.get("remote") or [] if r.get("completion", 100) < 100]
+    if behind:
+        out.append(issue(f"{behind[0]['name']} at {behind[0]['completion']:g}%", "info", "remote-behind"))
     return out
 
 
@@ -99,7 +103,12 @@ def folder_cell(f: dict | None, sy: dict | None) -> dict:
     issues = folder_issues(f)
     state = f.get("state") or "unknown"
     base = {"state": state, "type": f.get("type") or "", "error": f.get("error") or "",
-            "conflicts": [tilde(c) for c in f.get("conflicts") or []][:200]}
+            "conflicts": [tilde(c) for c in f.get("conflicts") or []][:200],
+            "paused": bool(f.get("paused")), "need": f.get("need") or 0, "need_bytes": f.get("need_bytes") or 0,
+            "local_files": f.get("local_files"), "global_files": f.get("global_files"),
+            "local_bytes": f.get("local_bytes"), "global_bytes": f.get("global_bytes"),
+            "state_changed": f.get("state_changed") or "", "devices": list(f.get("devices") or []),
+            "remote": list(f.get("remote") or []), "error_paths": [tilde(p) for p in f.get("error_paths") or []]}
     if issues:
         return {**base, "status": worst(i["tone"] for i in issues),
                 "label": ", ".join(i["text"] for i in issues), "issues": issues}
@@ -160,12 +169,14 @@ def machine(cfg: Config, name: str, st: dict | None, peer: dict | None) -> dict:
     else:
         reach, seen, err = ("bad" if peer.get("error") else "ok"), peer.get("fetched") or None, peer.get("error") or ""
     sy = (st or {}).get("syncthing") or {}
-    return {"name": name, "me": me, "reach": reach, "seen": seen, "error": err,
+    gen = (st or {}).get("generated")
+    return {"name": name, "me": me, "generated": gen, "reach": reach, "seen": seen, "error": err,
             "has_state": bool(st), "version": (st or {}).get("version") or "",
             "url": "" if me else cfg.machines[name].tailnet_url,
             "cycle": cycle_info(st or {}),
             "syncthing": {"reachable": bool(sy.get("reachable")), "error": sy.get("error") or "",
-                          "connected": [{"name": c.get("name", ""), "connected": bool(c.get("connected"))}
+                          "connected": [{"name": c.get("name", ""), "connected": bool(c.get("connected")),
+                                         "last_seen": c.get("last_seen", "")}
                                         for c in sy.get("connected") or []]}}
 
 
@@ -182,6 +193,158 @@ def skills(name: str, st: dict | None) -> dict:
             "source_exists": bool(sk.get("source_exists")), "skills": list(sk.get("skills") or []),
             "targets": targets,
             "instructions": [{"path": tilde(i["path"]), "status": i["status"]} for i in sk.get("instructions") or []]}
+
+
+# --- drift: where machines disagree -------------------------------------------------------
+def human_bytes(n) -> str:
+    n = float(n or 0)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if n < 1024 or unit == "TB":
+            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
+        n /= 1024
+    return ""
+
+
+def _and(names) -> str:
+    names = list(names)
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def short(sha: str) -> str:
+    return (sha or "")[:7]
+
+
+STALE_CYCLES = 2.5   # a machine whose last sync is older than this many intervals is "stale"
+PEER_STALE_S = 600   # peer data older than this (while the page is open) is "stale"
+
+
+def drift(cfg: Config, names: list[str], states: dict, peers: dict, now: float | None = None) -> list[dict]:
+    """Every place where the machines disagree, worst first. Each item names the machines involved
+    and what each one reports, so the page can show the comparison without judging anything."""
+    now = now or time.time()
+    out: list[dict] = []
+
+    def add(area, kind, tone, subject, summary, per=None):
+        out.append({"id": f"{area}:{kind}:{subject}", "area": area, "kind": kind, "tone": tone,
+                    "subject": subject, "summary": summary, "machines": per or {}})
+
+    have = [m for m in names if states.get(m)]
+
+    # machines ----------------------------------------------------------------------------
+    for m in names:
+        if m == cfg.machine:
+            continue
+        p = peers.get(m) or {}
+        if not states.get(m):
+            if p.get("error"):
+                add("machines", "no-data", "warn", m, p["error"])
+            else:
+                add("machines", "no-data", "info", m, "waiting for first contact")
+        elif p.get("error"):
+            add("machines", "unreachable", "warn", m,
+                f"unreachable now; showing what it reported {_ago(p.get('fetched'), now)}", {m: p["error"]})
+        elif p.get("fetched") and now - p["fetched"] > PEER_STALE_S:
+            add("machines", "stale-peer", "info", m, f"last heard from {_ago(p['fetched'], now)}")
+    for m in have:
+        c = states[m].get("cycle") or {}
+        if c.get("enabled", True) and c.get("finished") and now - c["finished"] > STALE_CYCLES * cfg.interval_s:
+            add("machines", "stale-sync", "warn", m, f"last sync finished {_ago(c['finished'], now)}")
+        for d in (states[m].get("syncthing") or {}).get("connected") or []:
+            if not d.get("connected"):
+                add("machines", "disconnected", "warn", f"{m} → {d.get('name', '?')}",
+                    "Syncthing is not connected", {m: f"last seen {d.get('last_seen') or 'never'}"})
+    versions = {m: states[m].get("version") or "?" for m in have}
+    if len(set(versions.values())) > 1:
+        add("machines", "version", "info", "devsync", "machines run different devsync versions", versions)
+
+    # repos -------------------------------------------------------------------------------
+    for entry in cfg.repos:
+        path = entry["path"]
+        kept = [m for m in entry.get("machines", []) if m in have]
+        cells = {m: (states[m].get("repos") or {}).get(path) for m in kept}
+        ok = {m: st for m, st in cells.items() if st and st.get("present") and st.get("is_repo") and not st.get("error")}
+        missing = [m for m, st in cells.items() if st and not st.get("present") and not st.get("error")]
+        if ok and missing:
+            add("repos", "missing", "warn", path, f"cloned on {_and(ok)}, missing on {_and(missing)}")
+        if len(ok) < 2:
+            continue
+        branches = {m: st.get("branch") or "(detached)" for m, st in ok.items()}
+        if len(set(branches.values())) > 1:
+            add("repos", "branch", "info", path, "different branches checked out", branches)
+            continue
+        heads = {m: st.get("head") for m, st in ok.items()}
+        if all(heads.values()) and len(set(heads.values())) > 1:
+            per = {}
+            for m, st in ok.items():
+                bits = [short(st["head"])]
+                if st.get("ahead"):
+                    bits.append(f"{st['ahead']} unpushed")
+                if st.get("behind"):
+                    bits.append(f"{st['behind']} behind {st.get('upstream') or 'upstream'}")
+                if not st.get("ahead") and not st.get("behind") and st.get("upstream"):
+                    bits.append(f"matches {st['upstream']}")
+                per[m] = " · ".join(bits)
+            add("repos", "commit", "warn", path, f"different commits of {next(iter(branches.values()))}", per)
+
+    # folders -----------------------------------------------------------------------------
+    reach = {m: states[m]["syncthing"] for m in have if (states[m].get("syncthing") or {}).get("reachable")}
+    by_id: dict[str, dict] = {}
+    for m, sy in reach.items():
+        for f in sy.get("folders") or []:
+            by_id.setdefault(f["id"], {})[m] = f
+    for fid, on in by_id.items():
+        label = next(iter(on.values())).get("label") or fid
+        absent = [m for m in reach if m not in on]
+        if absent:
+            add("folders", "not-shared", "warn", label, f"shared on {_and(on)}, not on {_and(absent)}")
+        paused = [m for m, f in on.items() if f.get("paused")]
+        if paused and len(paused) < len(on):
+            add("folders", "paused-one", "warn", label, f"paused on {_and(paused)} only")
+        seen_remote = set()
+        for m, f in on.items():
+            for r in f.get("remote") or []:
+                if r.get("completion", 100) < 100 and r["name"] not in seen_remote:
+                    seen_remote.add(r["name"])
+                    add("folders", "catching-up", "info", label,
+                        f"{r['name']} is {r['completion']:g}% in sync",
+                        {r["name"]: f"{r.get('need_items', 0)} item(s), {human_bytes(r.get('need_bytes'))} to go (seen from {m})"})
+        settled = all(f.get("state") == "idle" and not f.get("need") and not f.get("paused")
+                      and not any(r.get("completion", 100) < 100 for r in f.get("remote") or [])
+                      and f.get("local_files") is not None
+                      for f in on.values())
+        counts = {m: f.get("local_files") for m, f in on.items()}
+        if len(on) > 1 and settled and len(set(counts.values())) > 1:
+            add("folders", "file-count", "info", label, "same folder, different file counts (ignore rules may differ)",
+                {m: f"{n} files" for m, n in counts.items()})
+
+    # skills ------------------------------------------------------------------------------
+    sets = {m: set((states[m].get("skills") or {}).get("skills") or []) for m in have
+            if (states[m].get("skills") or {}).get("source_exists")}
+    if len(sets) > 1:
+        union = set().union(*sets.values())
+        per = {m: "missing " + ", ".join(sorted(union - s)) for m, s in sets.items() if union - s}
+        if per:
+            add("skills", "differ", "warn", "skills folder",
+                f"{len(set().union(*(union - s for s in sets.values())))} skill(s) not on every machine", per)
+
+    order = {m: i for i, m in enumerate(names)}
+    for d in out:  # machines always listed in config order
+        d["machines"] = dict(sorted(d["machines"].items(), key=lambda kv: order.get(kv[0], len(order))))
+    rank = {"bad": 0, "warn": 1, "info": 2, "ok": 3}
+    return sorted(out, key=lambda d: (rank.get(d["tone"], 9), d["area"], d["subject"]))
+
+
+def _ago(ts, now) -> str:
+    if not ts:
+        return "never"
+    s = max(0, now - ts)
+    if s < 90:
+        return "just now"
+    if s < 5400:
+        return f"{round(s / 60)} min ago"
+    if s < 129600:
+        return f"{round(s / 3600)} h ago"
+    return f"{round(s / 86400)} d ago"
 
 
 def build(cfg: Config, own: dict, peers: dict) -> dict:
@@ -220,7 +383,7 @@ def build(cfg: Config, own: dict, peers: dict) -> dict:
         folders.append({"id": fid, "label": f0.get("label") or fid, "path": tilde(f0.get("path", "")),
                         "machines": cells, "status": worst(c["status"] for c in cells.values())})
 
-    activity, housekeeping = [], []
+    activity, housekeeping, history = [], [], []
     for m in names:
         st = states.get(m)
         if not st:
@@ -228,6 +391,8 @@ def build(cfg: Config, own: dict, peers: dict) -> dict:
         c = st.get("cycle") or {}
         activity.append({"machine": m, "finished": c.get("finished"), "dry_run": bool(c.get("dry_run")),
                          "actions": [tilde(a) for a in (c.get("actions") or []) + (c.get("skill_actions") or [])]})
+        history += [{**h, "machine": m, "actions": [tilde(a) for a in h.get("actions") or []]}
+                    for h in st.get("history") or []]
         housekeeping.append({"machine": m, "unlisted": [tilde(x) for x in st.get("unlisted") or []],
                              "naming": [tilde(x) for x in st.get("naming") or []],
                              "config_conflicts": [tilde(x) for x in st.get("config_conflicts") or []]})
@@ -244,5 +409,7 @@ def build(cfg: Config, own: dict, peers: dict) -> dict:
         "folders": folders,
         "skills": [skills(m, states.get(m)) for m in names],
         "activity": activity,
+        "history": sorted(history, key=lambda h: h.get("finished") or 0, reverse=True)[:300],
         "housekeeping": housekeeping,
+        "drift": drift(cfg, names, states, peers),
     }

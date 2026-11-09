@@ -64,13 +64,13 @@ function Shell() {
     <SidebarProvider>
       <AppSidebar page={route.id} data={data} />
       <SidebarInset className="min-w-0">
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 rounded-t-xl border-b bg-background/85 px-3 backdrop-blur md:px-5">
+        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-background px-3 md:px-6">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
           <h1 className="truncate text-sm font-medium">{route.title}</h1>
           <div className="ml-auto flex items-center gap-1.5">
             {data && <CycleLine data={data} />}
-            <Button variant="outline" size="sm" className="hidden w-52 justify-start bg-card text-muted-foreground lg:flex" onClick={() => setMenu(true)}>
+            <Button variant="ghost" size="sm" className="hidden w-48 justify-start border text-muted-foreground shadow-none lg:flex" onClick={() => setMenu(true)}>
               <Search />Search…<kbd className="ml-auto rounded border bg-muted px-1.5 font-mono text-[10px]">Ctrl K</kbd>
             </Button>
             <Button variant="ghost" size="icon-sm" className="lg:hidden" onClick={() => setMenu(true)} aria-label="Search"><Search /></Button>
@@ -80,22 +80,20 @@ function Shell() {
               </TooltipTrigger>
               <TooltipContent>{THEME_TITLE[theme.pref]}</TooltipContent>
             </Tooltip>
-            <Button size="sm" onClick={sync} disabled={running || data?.cycle.enabled === false}
+            <Button size="sm" variant="outline" className="shadow-none" onClick={sync} disabled={running || data?.cycle.enabled === false}
               title={data?.cycle.enabled === false ? "The sync cycle is off on this server" : `Fetch, fast-forward and relink on ${data?.me ?? "this machine"}`}>
               {running ? <Loader2 className="animate-spin" /> : <RefreshCw />}
               <span className="hidden sm:inline">{running ? "Syncing" : "Sync now"}</span>
             </Button>
           </div>
         </header>
-        <div className="mx-auto w-full max-w-[1400px] flex-1 p-3 md:p-6">
+        <div className="w-full max-w-[1600px] flex-1 px-3 py-4 md:px-6 md:py-5">
           {error && (
-            <div role="status" className="mb-4 flex items-center gap-2 rounded-lg border border-bad/30 bg-bad-soft px-3 py-2 text-sm text-bad">
+            <div role="status" className="mb-4 flex items-center gap-2 border-l-2 border-bad py-1 pl-3 text-sm text-bad">
               <WifiOff className="size-4" />{error}{data && <span className="text-bad/80">Showing what was last loaded.</span>}
             </div>
           )}
-          <div className="mb-5">
-            <p className="text-sm text-muted-foreground">{route.description}</p>
-          </div>
+          <p className="mb-4 text-sm text-muted-foreground">{route.description}</p>
           {data ? <route.component data={data} params={params} /> : loading ? <Loading /> : null}
         </div>
       </SidebarInset>
@@ -116,8 +114,8 @@ function CycleLine({ data }: { data: NonNullable<ReturnType<typeof useDashboard>
 function Loading() {
   return (
     <div className="grid gap-3 md:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
-      <Skeleton className="h-72 rounded-xl md:col-span-4" />
+      {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-md" />)}
+      <Skeleton className="h-72 rounded-md md:col-span-4" />
     </div>
   );
 }

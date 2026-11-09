@@ -17,6 +17,13 @@ It looks after three things:
 
 It runs a sync every 15 minutes, or when you press **Sync now**.
 
+Because every copy sees every machine, devsync also points out where they **disagree**: a repo on
+different commits or branches, a repo cloned on one machine but missing on another, a folder
+shared on only one side, a machine still catching up on a folder, the same folder holding
+different file counts (usually different ignore rules), skills missing on one machine, a machine
+whose last sync is stale, or machines running different devsync versions. Clicking a repo or
+folder shows every machine side by side, with the fields that differ marked.
+
 ## What it won't do
 
 devsync only takes safe steps on its own: fetch, clone a missing repo, fast-forward a clean

@@ -47,7 +47,7 @@ export function CommandMenu({ open, setOpen, data, onSync, onTheme }: {
             <CommandSeparator />
             <CommandGroup heading="Repositories">
               {data.repos.map((r) => (
-                <CommandItem key={r.path} value={`repo ${r.path} ${r.remote}`} onSelect={go(() => navigate("repos", { q: r.path }))}>
+                <CommandItem key={r.path} value={`repo ${r.path} ${r.remote}`} onSelect={go(() => navigate("repos", { open: r.path }))}>
                   <GitBranch /><span className="font-mono text-[13px]">{r.path}</span>
                   {r.remote && <CommandShortcut className="max-w-48 truncate tracking-normal">{r.remote}</CommandShortcut>}
                 </CommandItem>
@@ -58,7 +58,7 @@ export function CommandMenu({ open, setOpen, data, onSync, onTheme }: {
         {data && data.folders.length > 0 && (
           <CommandGroup heading="Folders">
             {data.folders.map((f) => (
-              <CommandItem key={f.id} value={`folder ${f.label} ${f.id} ${f.path}`} onSelect={go(() => navigate("folders", { q: f.label }))}>
+              <CommandItem key={f.id} value={`folder ${f.label} ${f.id} ${f.path}`} onSelect={go(() => navigate("folders", { open: f.id }))}>
                 <FolderSync />{f.label}
                 <CommandShortcut className="max-w-48 truncate font-mono tracking-normal">{f.path}</CommandShortcut>
               </CommandItem>

@@ -141,7 +141,7 @@ class ParseStatusTest(unittest.TestCase):
         text = "# branch.oid abc\n# branch.head main\n# branch.upstream origin/main\n# branch.ab +2 -3\n" \
                "1 .M N... 100644 100644 100644 a b f.txt\n? new.txt\n"
         self.assertEqual(gitops.parse_status(text),
-                         {"branch": "main", "upstream": "origin/main", "ahead": 2, "behind": 3, "dirty": 2})
+                         {"branch": "main", "head": "abc", "upstream": "origin/main", "ahead": 2, "behind": 3, "dirty": 2})
 
     def test_detached(self):
         self.assertEqual(gitops.parse_status("# branch.head (detached)\n")["branch"], "")

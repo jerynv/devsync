@@ -13,6 +13,8 @@ from .config import Config, LiveConfig, config_dir, state_dir
 
 SELF_REPO = Path(__file__).resolve().parent.parent
 MAX_PARALLEL = 4
+HISTORY = 50          # cycles kept in memory (and shown to peers)
+HISTORY_ACTIONS = 40  # actions kept per cycle
 
 
 class CycleBusy(Exception):
@@ -165,6 +167,7 @@ class Runner:
         self.last_error = ""
         self.snap: dict = {}
         self.last_cycle: dict = {}
+        self.history: list[dict] = []  # newest first, bounded by HISTORY
         self.next_due = time.time() + 5  # first cycle shortly after start
         self._refreshing = False
         self.enabled = True  # False for `serve --no-cycle`
@@ -178,7 +181,13 @@ class Runner:
                                   "next_due": self.next_due if self.enabled else None,
                                   "error": self.last_error, "queued": self.requested})
             snap["config_error"] = self.live.error or ""
+            snap["history"] = list(self.history)
             return snap
+
+    def _remember(self, entry: dict):
+        with self.lock:
+            self.history.insert(0, entry)
+            del self.history[HISTORY:]
 
     # --- triggers ------------------------------------------------------------------------
     def request_sync(self) -> str:
@@ -241,6 +250,7 @@ class Runner:
     def run_once(self):
         with self.lock:
             self.running, self.requested = True, False
+        started = time.time()
         try:
             cfg = self.live.get()
             prev = {p: gitops.RepoState(**d) for p, d in self.snap.get("repos", {}).items()}
@@ -249,10 +259,17 @@ class Runner:
                 self.last_cycle = snap.pop("cycle")
                 self.snap = snap
                 self.last_error = ""
+            c = self.last_cycle
+            done = c.get("actions", []) + c.get("skill_actions", [])
+            self._remember({"started": c.get("started", started), "finished": c.get("finished"),
+                            "actions": done[:HISTORY_ACTIONS], "action_count": len(done),
+                            "attention_count": len(c.get("attention", [])), "error": ""})
         except CycleBusy as e:
             self.last_error = str(e)
         except Exception as e:
             self.last_error = f"cycle failed: {e.__class__.__name__}: {e}"
+            self._remember({"started": started, "finished": time.time(), "actions": [], "action_count": 0,
+                            "attention_count": 0, "error": self.last_error})
         finally:
             with self.lock:
                 self.running = False

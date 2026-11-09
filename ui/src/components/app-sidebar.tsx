@@ -13,13 +13,13 @@ export function AppSidebar({ page, data }: { page: string; data: Dashboard | nul
   const { setOpenMobile } = useSidebar();
   const groups = ["Workspace", "System"] as const;
   return (
-    <Sidebar collapsible="icon" variant="inset">
+    <Sidebar collapsible="icon" variant="sidebar" className="border-sidebar-border">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild className="hover:bg-transparent">
               <a href={href("overview")} onClick={() => setOpenMobile(false)}>
-                <div className="flex size-8 items-center justify-center rounded-lg border bg-card"><Logo /></div>
+                <div className="flex size-8 items-center justify-center"><Logo /></div>
                 <div className="grid leading-tight">
                   <span className="text-[15px] font-semibold tracking-tight">devsync</span>
                   <span className="font-mono text-xs text-muted-foreground">{data?.me ?? "…"}</span>
@@ -45,7 +45,7 @@ export function AppSidebar({ page, data }: { page: string; data: Dashboard | nul
                           <span>{r.title}</span>
                         </a>
                       </SidebarMenuButton>
-                      {n > 0 && <SidebarMenuBadge className="tabular text-warn">{n}</SidebarMenuBadge>}
+                      {n > 0 && <SidebarMenuBadge className="tabular font-normal text-muted-foreground peer-data-[active=true]/menu-button:text-foreground">{n}</SidebarMenuBadge>}
                     </SidebarMenuItem>
                   );
                 })}
