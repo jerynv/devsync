@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- macOS LaunchAgent for devsync. Fill in the @PLACEHOLDERS@, save as
+     ~/Library/LaunchAgents/local.devsync.plist, then:
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.devsync.plist
+     It runs in your login session, so git can use the keychain.
+     No WorkingDirectory on purpose: when the checkout lives under a privacy-protected folder
+     (~/Documents), launchd can fail before Python starts. The bash wrapper changes directory
+     instead, and keeps bash as the process macOS privacy controls check. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.devsync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-c</string>
+    <string>cd "@CHECKOUT@" &amp;&amp; exec python3 -m devsync serve</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>DEVSYNC_MACHINE</key>
+    <string>@MACHINE@</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+  <key>Nice</key>
+  <integer>10</integer>
+  <key>LowPriorityIO</key>
+  <true/>
+  <key>StandardErrorPath</key>
+  <string>@HOME@/.local/state/devsync/launchd.err</string>
+</dict>
+</plist>

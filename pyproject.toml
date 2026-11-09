@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devsync"
+dynamic = ["version"]
+description = "Keep your own machines lined up from a small local web app: repos, Syncthing folders and agent skills."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Unlicense" }
+dependencies = []
+
+[project.scripts]
+devsync = "devsync.__main__:main"
+
+[tool.setuptools]
+packages = ["devsync"]
+
+[tool.setuptools.dynamic]
+version = { attr = "devsync.__version__" }
+
+[tool.setuptools.package-data]
+devsync = ["web/*", "web/assets/*", "web/fonts/*"]

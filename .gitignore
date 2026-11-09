@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+ui/node_modules/
+CLAUDE.md
+AGENTS.md
+.claude/
+*.tsbuildinfo

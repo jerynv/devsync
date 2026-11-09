@@ -1,0 +1,21 @@
+# systemd user unit for devsync. Fill in the @PLACEHOLDERS@, then:
+#   install -Dm644 devsync-server.service ~/.config/systemd/user/devsync-server.service
+#   systemctl --user daemon-reload && systemctl --user enable --now devsync-server.service
+# Needs `loginctl enable-linger $USER` to keep running while logged out.
+# Binding local_port 80 needs net.ipv4.ip_unprivileged_port_start=80 (an accepted trade-off: any
+# local process may then bind ports 80-1023).
+[Unit]
+Description=devsync (dashboard and 15-minute sync cycle)
+After=network-online.target
+
+[Service]
+Environment=DEVSYNC_MACHINE=@MACHINE@
+WorkingDirectory=@CHECKOUT@
+ExecStart=/usr/bin/python3 -m devsync serve
+Restart=always
+RestartSec=10
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,194 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Geist and Geist Mono, vendored under the SIL Open Font License (see fonts/OFL.txt). */
+@font-face {
+  font-family: "Geist";
+  src: url("./fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Palette: warm oat paper and soft ink in light; graphite with a faint green cast in dark.
+   Four quiet status hues: sage (fine), sand (look soon), clay (broken), slate (for your info).
+   Every text colour below keeps at least 4.5:1 against the surfaces it sits on. */
+:root {
+  --radius: 0.75rem;
+
+  --background: #f3f2ee;
+  --foreground: #1e2320;
+  --card: #fbfaf7;
+  --card-foreground: #1e2320;
+  --popover: #fbfaf7;
+  --popover-foreground: #1e2320;
+  --primary: #1e2320;
+  --primary-foreground: #fbfaf7;
+  --secondary: #ebe9e3;
+  --secondary-foreground: #1e2320;
+  --muted: #efede8;
+  --muted-foreground: #646a65;
+  --accent: #e9e7e1;
+  --accent-foreground: #1e2320;
+  --destructive: #a4483f;
+  --border: #e3e1da;
+  --input: #dcd9d1;
+  --ring: #8fb39c;
+
+  --brand: #5b8a6f;
+  --brand-soft: #a9c7b3;
+
+  --ok: #3f7356;
+  --ok-soft: #e3eee6;
+  --warn: #87611d;
+  --warn-soft: #f5ecd8;
+  --bad: #a4483f;
+  --bad-soft: #f6e2de;
+  --info: #3f6489;
+  --info-soft: #e2eaf3;
+  --none: #a3a7a2;
+
+  --sidebar: #f3f2ee;
+  --sidebar-foreground: #1e2320;
+  --sidebar-primary: #1e2320;
+  --sidebar-primary-foreground: #fbfaf7;
+  --sidebar-accent: #e7e5de;
+  --sidebar-accent-foreground: #1e2320;
+  --sidebar-border: #e3e1da;
+  --sidebar-ring: #8fb39c;
+}
+
+.dark {
+  --background: #111312;
+  --foreground: #e4e6e2;
+  --card: #181a19;
+  --card-foreground: #e4e6e2;
+  --popover: #1a1c1b;
+  --popover-foreground: #e4e6e2;
+  --primary: #e4e6e2;
+  --primary-foreground: #111312;
+  --secondary: #222523;
+  --secondary-foreground: #e4e6e2;
+  --muted: #1f2220;
+  --muted-foreground: #8f948f;
+  --accent: #232624;
+  --accent-foreground: #e4e6e2;
+  --destructive: #e59a90;
+  --border: #252826;
+  --input: #2d302e;
+  --ring: #4d6f5a;
+
+  --brand: #8dbb9e;
+  --brand-soft: #3e5a48;
+
+  --ok: #93c3a2;
+  --ok-soft: #1b2a21;
+  --warn: #dcbb7a;
+  --warn-soft: #2a2418;
+  --bad: #e59a90;
+  --bad-soft: #2e1d1b;
+  --info: #93b4d8;
+  --info-soft: #1a2431;
+  --none: #5d625e;
+
+  --sidebar: #111312;
+  --sidebar-foreground: #e4e6e2;
+  --sidebar-primary: #e4e6e2;
+  --sidebar-primary-foreground: #111312;
+  --sidebar-accent: #1d201e;
+  --sidebar-accent-foreground: #e4e6e2;
+  --sidebar-border: #222523;
+  --sidebar-ring: #4d6f5a;
+}
+
+@theme inline {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-none: var(--none);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 14px;
+    letter-spacing: -0.003em;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--brand-soft);
+    color: var(--foreground);
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Soft fade at the bottom of long scrolling lists. */
+  .fade-bottom {
+    mask-image: linear-gradient(to bottom, black calc(100% - 24px), transparent);
+  }
+}

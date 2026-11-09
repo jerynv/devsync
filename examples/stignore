@@ -1,0 +1,16 @@
+// Shared Syncthing ignore rules: copy into each synced folder as .stignore.
+(?d).DS_Store
+(?d)._*
+(?d).Spotlight-V100
+(?d).Trashes
+(?d).fseventsd
+(?d)Thumbs.db
+(?d)~$*
+(?d).~lock.*
+*.tmp
+.git
+node_modules
+.next
+__pycache__
+.venv
+.bundle-backups

@@ -1,0 +1,43 @@
+# devsync configuration. Copy to ~/.config/devsync/config.toml (one file shared by every machine;
+# keeping that folder in Syncthing is the intended setup). Use ~ in paths so the same file works
+# on each machine. Each devsync process is told which machine it is by DEVSYNC_MACHINE.
+
+# One table per machine. tailnet_url is where the other machines reach this one's devsync
+# (through `tailscale serve --http=80 http://127.0.0.1:<tailnet_port>`).
+[machines.laptop]
+tailnet_url = "http://laptop"   # MagicDNS short name of the machine
+local_port = 8765                # browser on this machine: http://devsync.localhost:8765
+tailnet_port = 8766              # loopback port that `tailscale serve` forwards to
+
+[machines.server]
+tailnet_url = "http://server"
+local_port = 80                  # needs net.ipv4.ip_unprivileged_port_start=80 on Linux
+tailnet_port = 8766
+
+[access]
+# Tailscale logins allowed through the tailnet listener (the Tailscale-User-Login header).
+tailnet_logins = ["you@example.com"]
+# Optional extra Host names for the tailnet listener. The MagicDNS name, its short form and the
+# tailnet IPs are read from `tailscale status` automatically.
+tailnet_hosts = []
+# Optional: how to run the Tailscale CLI if it is not on PATH.
+# tailscale_cli = ["/Applications/Tailscale.app/Contents/MacOS/Tailscale"]
+
+[repos]
+root = "~/Documents"             # repos.toml paths are relative to this
+scan_unlisted = ["GitHub"]       # report git repos in these folders that repos.toml doesn't list
+
+[skills]
+source = "~/.agents/skills"                       # the one shared copy
+targets = ["~/.claude/skills"]                     # folders that get a link per skill
+prune_link_prefixes = []                           # old locations whose dangling links may be removed
+instructions = "~/.agents/AGENTS.md"               # optional shared instructions file
+instruction_links = ["~/.claude/CLAUDE.md", "~/.codex/AGENTS.md"]
+
+[naming]
+# Report-only check on synced folders under ~/<under> (rows of folders.tsv).
+under = "Documents"
+rule = '^[a-z0-9]+([._-][a-z0-9]+)*$'
+
+[cycle]
+interval_minutes = 15

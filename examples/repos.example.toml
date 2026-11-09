@@ -1,0 +1,10 @@
+# path = folder under ~/Documents, url = clone address ("" = local-only), machines = which machines keep it
+[[repo]]
+path = "GitHub/example-app"
+url = "https://github.com/you/example-app.git"
+machines = ["laptop", "server"]
+
+[[repo]]
+path = "GitHub/local-experiment"
+url = ""
+machines = ["laptop"]
