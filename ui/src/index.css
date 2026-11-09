@@ -19,52 +19,53 @@
   font-display: swap;
 }
 
-/* Palette: warm oat paper and soft ink in light; graphite with a faint green cast in dark.
+/* Palette: crisp neutral (white and cool greys) in light; graphite with a faint green cast in dark.
    Four quiet status hues: sage (fine), sand (look soon), clay (broken), slate (for your info).
    Every text colour below keeps at least 4.5:1 against the surfaces it sits on. */
 :root {
   --radius: 0.75rem;
 
-  --background: #f3f2ee;
-  --foreground: #1e2320;
-  --card: #f3f2ee;
-  --card-foreground: #1e2320;
-  --popover: #fbfaf7;
-  --popover-foreground: #1e2320;
-  --primary: #1e2320;
-  --primary-foreground: #fbfaf7;
-  --secondary: #ebe9e3;
-  --secondary-foreground: #1e2320;
-  --muted: #efede8;
-  --muted-foreground: #646a65;
-  --accent: #e9e7e1;
-  --accent-foreground: #1e2320;
-  --destructive: #a4483f;
-  --border: #dddad2;
-  --input: #d6d3ca;
-  --ring: #8fb39c;
+  /* Light: a crisp neutral. White page, near-white sidebar, cool grey text and hairlines. */
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #6b6b73;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #b4372c;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
 
-  --brand: #5b8a6f;
-  --brand-soft: #a9c7b3;
+  --brand: #3f8a63;
+  --brand-soft: #b5dcc6;
 
-  --ok: #3f7356;
-  --ok-soft: #e3eee6;
-  --warn: #87611d;
-  --warn-soft: #f5ecd8;
-  --bad: #a4483f;
-  --bad-soft: #f6e2de;
-  --info: #3f6489;
-  --info-soft: #e2eaf3;
-  --none: #a3a7a2;
+  --ok: #2f7a52;
+  --ok-soft: #e8f3ec;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --bad: #b4372c;
+  --bad-soft: #fbe9e7;
+  --info: #2f5f9e;
+  --info-soft: #e8eff9;
+  --none: #a1a1aa;
 
-  --sidebar: #f3f2ee;
-  --sidebar-foreground: #1e2320;
-  --sidebar-primary: #1e2320;
-  --sidebar-primary-foreground: #fbfaf7;
-  --sidebar-accent: #e8e6df;
-  --sidebar-accent-foreground: #1e2320;
-  --sidebar-border: #dddad2;
-  --sidebar-ring: #8fb39c;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f0f0f2;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #a1a1aa;
 }
 
 .dark {
