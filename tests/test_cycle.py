@@ -132,6 +132,8 @@ class SyncthingTest(unittest.TestCase):
                                       "paused": True}],
             "/rest/db/status": {"state": "idle", "errors": 2, "pullErrors": 2, "needTotalItems": 3},
             "/rest/folder/errors": {"errors": [{"path": "bad.txt", "error": "x"}]},
+            "/rest/system/status": {"myID": "ME"},
+            "/rest/stats/device": {"PEER": {"lastSeen": "2026-01-01T00:00:00Z"}},
         }
         seen_keys = []
 
@@ -169,6 +171,42 @@ class SyncthingTest(unittest.TestCase):
             self.assertIn(want, notes)
         if os.geteuid() != 0:
             self.assertIn("could not read 1 folder", notes)
+
+    def test_counts_and_remote_completion(self):
+        routes = {
+            "/rest/system/connections": {"connections": {"PEER": {"connected": True}}},
+            "/rest/config/devices": [{"deviceID": "ME", "name": "here"}, {"deviceID": "PEER", "name": "other"}],
+            "/rest/config/folders": [{"id": "f", "label": "F", "path": "/nonexistent", "type": "sendreceive",
+                                      "devices": [{"deviceID": "ME"}, {"deviceID": "PEER"}]}],
+            "/rest/db/status": {"state": "idle", "localFiles": 10, "globalFiles": 12, "needBytes": 2048},
+            "/rest/system/status": {"myID": "ME"},
+            "/rest/stats/device": {},
+            "/rest/db/completion": {"completion": 91.234, "needItems": 3, "needBytes": 4096},
+        }
+
+        class H(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                body = json.dumps(routes[self.path.split("?")[0]]).encode()
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(body)
+
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            xml = (f'<configuration><gui enabled="true" tls="false"><address>127.0.0.1:{srv.server_address[1]}'
+                   f'</address><apikey>K</apikey></gui></configuration>')
+            h = syncthing.health([], walk=False, client=syncthing.Syncthing.from_xml(xml))
+        finally:
+            srv.shutdown()
+            srv.server_close()
+        f = h["folders"][0]
+        self.assertEqual((f["local_files"], f["global_files"], f["need_bytes"]), (10, 12, 2048))
+        self.assertEqual(f["devices"], ["other"])  # this machine is left out
+        self.assertEqual(f["remote"], [{"name": "other", "completion": 91.2, "need_items": 3, "need_bytes": 4096}])
 
     def test_unreachable(self):
         c = syncthing.Syncthing("http://127.0.0.1:9/rest", "k", False)

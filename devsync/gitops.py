@@ -100,6 +100,7 @@ class RepoState:
     present: bool = False
     is_repo: bool = False
     branch: str = ""
+    head: str = ""                 # commit id checked out (from status, no extra git call)
     upstream: str = ""
     ahead: int = 0
     behind: int = 0
@@ -129,9 +130,12 @@ def git_dir(path: Path) -> Path | None:
 
 
 def parse_status(text: str) -> dict:
-    out = {"branch": "", "upstream": "", "ahead": 0, "behind": 0, "dirty": 0}
+    out = {"branch": "", "head": "", "upstream": "", "ahead": 0, "behind": 0, "dirty": 0}
     for line in text.splitlines():
-        if line.startswith("# branch.head "):
+        if line.startswith("# branch.oid "):
+            oid = line[len("# branch.oid "):]
+            out["head"] = "" if oid == "(initial)" else oid
+        elif line.startswith("# branch.head "):
             head = line[len("# branch.head "):]
             out["branch"] = "" if head == "(detached)" else head
         elif line.startswith("# branch.upstream "):

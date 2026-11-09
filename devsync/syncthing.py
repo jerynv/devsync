@@ -67,8 +67,17 @@ def health(skip_dirs: list[str], walk: bool, client: Syncthing | None = None) ->
     try:
         conns = st.get("/system/connections")["connections"]
         devices = {d["deviceID"]: d.get("name", "") for d in st.get("/config/devices")}
-        out["connected"] = [{"name": devices.get(did, did[:7]), "connected": bool(c.get("connected"))}
+        try:
+            seen = st.get("/stats/device")
+        except Exception:
+            seen = {}
+        out["connected"] = [{"name": devices.get(did, did[:7]), "connected": bool(c.get("connected")),
+                             "last_seen": (seen.get(did) or {}).get("lastSeen", "")}
                             for did, c in conns.items()]
+        try:
+            my_id = st.get("/system/status").get("myID", "")
+        except Exception:
+            my_id = ""
         if conns and not any(c.get("connected") for c in conns.values()):
             out["notes"].append("Syncthing: the other machine is not connected (files will catch up when it is)")
         skip = set(skip_dirs)
@@ -78,7 +87,24 @@ def health(skip_dirs: list[str], walk: bool, client: Syncthing | None = None) ->
             row = {"id": f["id"], "label": f.get("label") or f["id"], "path": f["path"], "type": f["type"],
                    "paused": bool(f.get("paused")), "state": s.get("state", ""), "errors": errors,
                    "error": s.get("error") or s.get("watchError") or "", "need": s.get("needTotalItems", 0),
-                   "conflicts": [], "skipped": []}
+                   "conflicts": [], "skipped": [],
+                   "local_files": s.get("localFiles", 0), "global_files": s.get("globalFiles", 0),
+                   "local_bytes": s.get("localBytes", 0), "global_bytes": s.get("globalBytes", 0),
+                   "need_bytes": s.get("needBytes", 0), "state_changed": s.get("stateChanged", ""),
+                   "devices": [], "remote": []}
+            for d in f.get("devices") or []:
+                did = d.get("deviceID", "")
+                if did == my_id:
+                    continue
+                name = devices.get(did, did[:7])
+                row["devices"].append(name)
+                if conns.get(did, {}).get("connected") and not row["paused"]:
+                    try:
+                        c = st.get(f"/db/completion?folder={urllib.request.quote(f['id'])}&device={did}")
+                        row["remote"].append({"name": name, "completion": round(float(c.get("completion", 0)), 1),
+                                              "need_items": c.get("needItems", 0), "need_bytes": c.get("needBytes", 0)})
+                    except Exception:
+                        pass
             if errors:
                 try:
                     fe = st.get(f"/folder/errors?folder={urllib.request.quote(f['id'])}&perpage=5")
