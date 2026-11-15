@@ -34,6 +34,16 @@ prune_link_prefixes = []                           # old locations whose danglin
 instructions = "~/.agents/AGENTS.md"               # optional shared instructions file
 instruction_links = ["~/.claude/CLAUDE.md", "~/.codex/AGENTS.md"]
 
+[agent_settings]
+# Keys merged into each target on every sync. Only settings.json / settings.local.json can be
+# targets; nested tables merge key by key; nothing is removed; invalid JSON is left alone.
+# Login and credential keys (apiKeyHelper, ANTHROPIC_*, *token*, ...) are refused.
+targets = ["~/.claude/settings.json"]
+
+[agent_settings.values]
+autoMemoryEnabled = false
+attribution = { commit = "", pr = "" }
+
 [naming]
 # Report-only check on synced folders under ~/<under> (rows of folders.tsv).
 under = "Documents"

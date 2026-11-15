@@ -14,6 +14,9 @@ It looks after three things:
   to date, paused or erroring, and any conflict copies lying around.
 - **Agent skills.** One shared skills folder, linked into each agent CLI's skills directory, plus
   the instruction files that point at it.
+- **Agent settings.** A few keys you choose (say, turning off auto-memory) merged into each
+  machine's agent `settings.json`. Only those keys are written; everything else in the file stays
+  as it is, and login or credential settings can't be managed at all.
 
 It runs a sync every 15 minutes, or when you press **Sync now**.
 

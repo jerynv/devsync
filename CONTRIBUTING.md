@@ -6,7 +6,7 @@ more than usual.
 ## Safety rules
 
 - **Nothing destructive by default.** devsync fetches, clones missing repos, fast-forwards clean
-  branches and links skills. Anything else (push, merge, rebase, reset, checkout, clean, deleting
+  branches, links skills and merges the listed agent settings keys. Anything else (push, merge, rebase, reset, checkout, clean, deleting
   a branch, force, removing a Syncthing folder) needs an explicit click in the page, and lands
   only with tests that prove the guard holds.
 - **All git goes through `devsync/gitops.py`.** It runs only the exact argument lists in
