@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import __version__, gitops, naming, skills, syncthing
+from . import __version__, agent_settings, gitops, naming, skills, syncthing
 from .config import Config, LiveConfig, config_dir, state_dir
 
 SELF_REPO = Path(__file__).resolve().parent.parent
@@ -95,6 +95,8 @@ def _cycle(cfg: Config, *, dry_run: bool, prev: dict) -> dict:
         skill_actions, skill_notes = [], []
     else:
         skill_actions, skill_notes = skills.apply(cfg)
+        set_actions, set_notes = agent_settings.apply(cfg)
+        skill_actions, skill_notes = skill_actions + set_actions, skill_notes + set_notes
     snap = snapshot(cfg, states, health, banner=banner)
     snap["cycle"] = {"started": started, "finished": time.time(), "dry_run": dry_run,
                      "actions": actions, "skill_actions": skill_actions,
@@ -116,6 +118,7 @@ def snapshot(cfg: Config, states: list, health: dict, banner: str = "") -> dict:
         "repos": {s.path: s.to_dict() for s in states},
         "syncthing": health,
         "skills": skills.check(cfg),
+        "agent_settings": agent_settings.check(cfg),
         "config_conflicts": syncthing.config_conflicts(config_dir()),
     }
 

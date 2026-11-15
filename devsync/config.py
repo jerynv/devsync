@@ -58,6 +58,8 @@ class Config:
     skills_prune_prefixes: list[Path]
     instructions: Path | None
     instruction_links: list[Path]
+    agent_settings_targets: list[Path] = field(default_factory=list)
+    agent_settings_values: dict = field(default_factory=dict)
     name_rule: str = DEFAULT_NAME_RULE
     name_under: str = "Documents"
     skip_dirs: list[str] = field(default_factory=lambda: list(DEFAULT_SKIP_DIRS))
@@ -113,6 +115,14 @@ def load(cdir: Path | None = None, machine: str | None = None) -> Config:
     repos_path = cdir / "repos.toml"
     repos = tomllib.loads(repos_path.read_text()).get("repo", []) if repos_path.exists() else []
     instr = skills.get("instructions")
+    agent = raw.get("agent_settings", {})
+    agent_values = agent.get("values", {})
+    if not isinstance(agent_values, dict):
+        raise ConfigError("[agent_settings.values] must be a table")
+    from .agent_settings import auth_paths  # local import: agent_settings imports Config
+    bad = auth_paths(agent_values)
+    if bad:
+        raise ConfigError(f"[agent_settings.values] may not manage login or credential keys: {', '.join(bad)}")
     return Config(
         machine=machine,
         machines=machines,
@@ -128,6 +138,8 @@ def load(cdir: Path | None = None, machine: str | None = None) -> Config:
         skills_prune_prefixes=[expand(t) for t in skills.get("prune_link_prefixes", [])],
         instructions=expand(instr) if instr else None,
         instruction_links=[expand(t) for t in skills.get("instruction_links", [])],
+        agent_settings_targets=[expand(t) for t in agent.get("targets", [])],
+        agent_settings_values=agent_values,
         name_rule=naming.get("rule", DEFAULT_NAME_RULE),
         name_under=naming.get("under", "Documents"),
         skip_dirs=list(naming.get("skip_dirs", DEFAULT_SKIP_DIRS)),
